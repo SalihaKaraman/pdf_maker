@@ -492,7 +492,7 @@ class _ContentCapturePageState extends State<ContentCapturePage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '${_pages.length} sayfa eklendi. Sıralama ve OCR adımı sırada.',
+                  '${_pages.length} soru eklendi. Her soruyu tek tek düzenleyebilirsin.',
                 ),
                 const SizedBox(height: 18),
                 ..._pages.asMap().entries.map(
@@ -511,7 +511,7 @@ class _ContentCapturePageState extends State<ContentCapturePage> {
                           leading: CircleAvatar(
                             child: Text('${entry.key + 1}'),
                           ),
-                          title: Text('Sayfa ${entry.key + 1}'),
+                          title: Text('Soru ${entry.key + 1}'),
                           subtitle: _ocrText.containsKey(entry.key)
                               ? Text(
                                   _figures.containsKey(entry.key)
@@ -522,7 +522,7 @@ class _ContentCapturePageState extends State<ContentCapturePage> {
                           trailing: IconButton(
                             onPressed: () =>
                                 setState(() => _pages.removeAt(entry.key)),
-                            tooltip: 'Sayfayı kaldır',
+                            tooltip: 'Soruyu kaldır',
                             icon: const Icon(Icons.delete_outline_rounded),
                           ),
                         ),
@@ -571,7 +571,7 @@ class _ContentCapturePageState extends State<ContentCapturePage> {
                 OutlinedButton.icon(
                   onPressed: () => _pickPage(ImageSource.gallery),
                   icon: const Icon(Icons.add_photo_alternate_outlined),
-                  label: const Text('Galeriden sayfa ekle'),
+                  label: const Text('Başka soru ekle'),
                 ),
               ],
             ),
@@ -678,7 +678,7 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isExam = type == DocumentType.exam;
+    final isExam = widget.type == DocumentType.exam;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Belge önizleme'),
@@ -694,14 +694,17 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
         children: [
           Text(
-            title,
+            widget.title,
             style: Theme.of(
               context,
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
           ),
-          if (subtitle.isNotEmpty) ...[
+          if (widget.subtitle.isNotEmpty) ...[
             const SizedBox(height: 4),
-            Text(subtitle, style: const TextStyle(color: Color(0xFF59645F))),
+            Text(
+              widget.subtitle,
+              style: const TextStyle(color: Color(0xFF59645F)),
+            ),
           ],
           const SizedBox(height: 20),
           Card(
@@ -709,25 +712,27 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
             child: ListTile(
               leading: const Icon(Icons.check_circle_outline),
               title: Text(isExam ? 'Sınav taslağı hazır' : 'Föy taslağı hazır'),
-              subtitle: Text('${pages.length} sayfa içerik eklendi'),
+              subtitle: Text(
+                '${widget.pages.length} soru aynı sayfaya eklendi',
+              ),
             ),
           ),
           const SizedBox(height: 18),
-          ...pages.asMap().entries.map(
+          ...widget.pages.asMap().entries.map(
             (entry) => Card(
               clipBehavior: Clip.antiAlias,
               margin: const EdgeInsets.only(bottom: 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (ocrText[entry.key]?.isNotEmpty == true)
+                  if (widget.ocrText[entry.key]?.isNotEmpty == true)
                     Padding(
                       padding: const EdgeInsets.all(16),
-                      child: Text(ocrText[entry.key]!),
+                      child: Text(widget.ocrText[entry.key]!),
                     ),
-                  if (figures[entry.key] != null)
+                  if (widget.figures[entry.key] != null)
                     Image.file(
-                      File(figures[entry.key]!.path),
+                      File(widget.figures[entry.key]!.path),
                       height: 220,
                       fit: BoxFit.contain,
                     ),
