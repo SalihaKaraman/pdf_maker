@@ -376,6 +376,7 @@ class _ContentCapturePageState extends State<ContentCapturePage> {
   final ImageCropper _cropper = ImageCropper();
   final List<XFile> _pages = [];
   final Map<int, String> _ocrText = {};
+  final Map<int, XFile> _figures = {};
   int? _recognizingPage;
 
   @override
@@ -410,6 +411,7 @@ class _ContentCapturePageState extends State<ContentCapturePage> {
       final text = await PlatformTextRecognizer.instance.recognizeText(
         _pages[index].path,
         script: TextRecognitionScript.latin,
+        languages: const ['tr-TR'],
       );
       if (!mounted) return;
       await Navigator.of(context).push(
@@ -425,6 +427,25 @@ class _ContentCapturePageState extends State<ContentCapturePage> {
     } finally {
       if (mounted) setState(() => _recognizingPage = null);
     }
+  }
+
+  Future<void> _cropFigure(int index) async {
+    final cropped = await _cropper.cropImage(
+      sourcePath: _pages[index].path,
+      compressQuality: 92,
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'Şekli kırp',
+          toolbarColor: const Color(0xFF1D8064),
+          toolbarWidgetColor: Colors.white,
+          activeControlsWidgetColor: const Color(0xFF1D8064),
+          lockAspectRatio: false,
+        ),
+        IOSUiSettings(title: 'Şekli kırp'),
+      ],
+    );
+    if (!mounted || cropped == null) return;
+    setState(() => _figures[index] = XFile(cropped.path));
   }
 
   @override
