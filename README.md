@@ -7,7 +7,7 @@
 - Android ve iOS için tek Flutter kod tabanı
 - Kamera veya galeriden içerik alma
 - Görseli kırpma ve temizleme
-- Cihaz üzerinde OCR ve metin düzenleme
+- Cihaz üzerinde OCR ve metin düzenleme (iOS'ta Apple Vision, Android'de ML Kit)
 - İçeriği metin, görsel veya ikisi olarak kullanma
 - Sınav ve ders föyü PDF'i oluşturma, önizleme ve paylaşma
 - Taslakları cihazda saklama; internet ve hesap gerektirmeme
