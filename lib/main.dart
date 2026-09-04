@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:pdf/pdf.dart';
@@ -550,10 +551,14 @@ class _ContentCapturePageState extends State<ContentCapturePage> {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              IconButton(
+                              OutlinedButton.icon(
                                 onPressed: () => _cropFigure(entry.key),
-                                tooltip: 'Şekli kırp',
                                 icon: const Icon(Icons.crop_rounded),
+                                label: Text(
+                                  _figures.containsKey(entry.key)
+                                      ? 'Şekli değiştir'
+                                      : 'Şekli seç',
+                                ),
                               ),
                             ],
                           ),
@@ -592,41 +597,69 @@ class DocumentPreviewPage extends StatelessWidget {
   final Map<int, XFile> figures;
 
   Future<void> _exportPdf() async {
-    final regularFont = await PdfGoogleFonts.notoSansRegular();
-    final boldFont = await PdfGoogleFonts.notoSansBold();
+    final regularFont = pw.Font.ttf(
+      await rootBundle.load('assets/fonts/ArialUnicode.ttf'),
+    );
+    final boldFont = pw.Font.ttf(
+      await rootBundle.load('assets/fonts/ArialBold.ttf'),
+    );
     final document = pw.Document();
+    final questionBlocks = <pw.Widget>[];
     for (final entry in pages.asMap().entries) {
       final figure = figures[entry.key];
       final figureImage = figure == null
           ? null
           : pw.MemoryImage(await File(figure.path).readAsBytes());
-      document.addPage(
-        pw.Page(
-          pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(24),
-          build: (context) => pw.Column(
+      questionBlocks.add(
+        pw.Container(
+          margin: const pw.EdgeInsets.only(bottom: 14),
+          child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.stretch,
             children: [
-              pw.Text(title, style: pw.TextStyle(font: boldFont, fontSize: 20)),
-              if (subtitle.isNotEmpty) ...[
-                pw.SizedBox(height: 4),
-                pw.Text(subtitle, style: pw.TextStyle(font: regularFont)),
-              ],
-              pw.SizedBox(height: 16),
+              pw.Text(
+                'Soru ${entry.key + 1}',
+                style: pw.TextStyle(font: boldFont, fontSize: 12),
+              ),
               if (ocrText[entry.key]?.isNotEmpty == true) ...[
                 pw.Text(
                   ocrText[entry.key]!,
-                  style: pw.TextStyle(font: regularFont, fontSize: 12),
+                  style: pw.TextStyle(font: regularFont, fontSize: 11),
                 ),
-                if (figureImage != null) pw.SizedBox(height: 16),
               ],
-              if (figureImage != null)
-                pw.Center(child: pw.Image(figureImage, fit: pw.BoxFit.contain)),
+              if (figureImage != null) ...[
+                pw.SizedBox(height: 8),
+                pw.Center(
+                  child: pw.Image(
+                    figureImage,
+                    width: 220,
+                    height: 150,
+                    fit: pw.BoxFit.contain,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
       );
     }
+    document.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(24),
+        build: (context) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+          children: [
+            pw.Text(title, style: pw.TextStyle(font: boldFont, fontSize: 20)),
+            if (subtitle.isNotEmpty) ...[
+              pw.SizedBox(height: 4),
+              pw.Text(subtitle, style: pw.TextStyle(font: regularFont)),
+            ],
+            pw.SizedBox(height: 16),
+            ...questionBlocks,
+          ],
+        ),
+      ),
+    );
     await Printing.layoutPdf(onLayout: (_) => document.save());
   }
 
