@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:platform_text_recognition/platform_text_recognition.dart';
 import 'package:printing/printing.dart';
 
 void main() {
@@ -374,16 +374,12 @@ class ContentCapturePage extends StatefulWidget {
 class _ContentCapturePageState extends State<ContentCapturePage> {
   final ImagePicker _picker = ImagePicker();
   final ImageCropper _cropper = ImageCropper();
-  final TextRecognizer _textRecognizer = TextRecognizer(
-    script: TextRecognitionScript.latin,
-  );
   final List<XFile> _pages = [];
   final Map<int, String> _ocrText = {};
   int? _recognizingPage;
 
   @override
   void dispose() {
-    _textRecognizer.close();
     super.dispose();
   }
 
@@ -411,10 +407,11 @@ class _ContentCapturePageState extends State<ContentCapturePage> {
   Future<void> _recognizePage(int index) async {
     setState(() => _recognizingPage = index);
     try {
-      final inputImage = InputImage.fromFilePath(_pages[index].path);
-      final recognizedText = await _textRecognizer.processImage(inputImage);
+      final text = await PlatformTextRecognizer.instance.recognizeText(
+        _pages[index].path,
+        script: TextRecognitionScript.latin,
+      );
       if (!mounted) return;
-      final text = recognizedText.text.trim();
       await Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => OcrEditorPage(
