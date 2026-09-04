@@ -467,7 +467,6 @@ class _ContentCapturePageState extends State<ContentCapturePage> {
                     pages: _pages,
                     ocrText: _ocrText,
                     figures: _figures,
-                    figurePositions: const {},
                   ),
                 ),
               ),
@@ -587,7 +586,6 @@ class DocumentPreviewPage extends StatefulWidget {
     required this.pages,
     required this.ocrText,
     required this.figures,
-    this.figurePositions = const {},
     super.key,
   });
 
@@ -597,15 +595,12 @@ class DocumentPreviewPage extends StatefulWidget {
   final List<XFile> pages;
   final Map<int, String> ocrText;
   final Map<int, XFile> figures;
-  final Map<int, Offset> figurePositions;
 
   @override
   State<DocumentPreviewPage> createState() => _DocumentPreviewPageState();
 }
 
 class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
-  late Map<int, Offset> _figurePositions = Map.of(widget.figurePositions);
-
   Future<void> _exportPdf() async {
     final regularFont = pw.Font.ttf(
       await rootBundle.load('assets/fonts/ArialUnicode.ttf'),
