@@ -510,7 +510,11 @@ class _ContentCapturePageState extends State<ContentCapturePage> {
                           ),
                           title: Text('Sayfa ${entry.key + 1}'),
                           subtitle: _ocrText.containsKey(entry.key)
-                              ? const Text('OCR metni düzenlendi')
+                              ? Text(
+                                  _figures.containsKey(entry.key)
+                                      ? 'Metin ve şekil hazır'
+                                      : 'OCR metni düzenlendi',
+                                )
                               : null,
                           trailing: IconButton(
                             onPressed: () =>
@@ -521,24 +525,36 @@ class _ContentCapturePageState extends State<ContentCapturePage> {
                         ),
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                          child: OutlinedButton.icon(
-                            onPressed: _recognizingPage == entry.key
-                                ? null
-                                : () => _recognizePage(entry.key),
-                            icon: _recognizingPage == entry.key
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Icon(Icons.text_fields_rounded),
-                            label: Text(
-                              _recognizingPage == entry.key
-                                  ? 'Metin çıkarılıyor'
-                                  : 'Metni çıkar',
-                            ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: _recognizingPage == entry.key
+                                      ? null
+                                      : () => _recognizePage(entry.key),
+                                  icon: _recognizingPage == entry.key
+                                      ? const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(Icons.text_fields_rounded),
+                                  label: Text(
+                                    _recognizingPage == entry.key
+                                        ? 'Metin çıkarılıyor'
+                                        : 'Metni çıkar',
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                onPressed: () => _cropFigure(entry.key),
+                                tooltip: 'Şekli kırp',
+                                icon: const Icon(Icons.crop_rounded),
+                              ),
+                            ],
                           ),
                         ),
                       ],
