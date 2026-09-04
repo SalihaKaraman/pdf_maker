@@ -467,6 +467,7 @@ class _ContentCapturePageState extends State<ContentCapturePage> {
                     pages: _pages,
                     ocrText: _ocrText,
                     figures: _figures,
+                    figurePositions: const {},
                   ),
                 ),
               ),
@@ -578,7 +579,7 @@ class _ContentCapturePageState extends State<ContentCapturePage> {
   }
 }
 
-class DocumentPreviewPage extends StatelessWidget {
+class DocumentPreviewPage extends StatefulWidget {
   const DocumentPreviewPage({
     required this.type,
     required this.title,
@@ -586,6 +587,7 @@ class DocumentPreviewPage extends StatelessWidget {
     required this.pages,
     required this.ocrText,
     required this.figures,
+    this.figurePositions = const {},
     super.key,
   });
 
@@ -595,6 +597,14 @@ class DocumentPreviewPage extends StatelessWidget {
   final List<XFile> pages;
   final Map<int, String> ocrText;
   final Map<int, XFile> figures;
+  final Map<int, Offset> figurePositions;
+
+  @override
+  State<DocumentPreviewPage> createState() => _DocumentPreviewPageState();
+}
+
+class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
+  late Map<int, Offset> _figurePositions = Map.of(widget.figurePositions);
 
   Future<void> _exportPdf() async {
     final regularFont = pw.Font.ttf(
@@ -605,8 +615,8 @@ class DocumentPreviewPage extends StatelessWidget {
     );
     final document = pw.Document();
     final questionBlocks = <pw.Widget>[];
-    for (final entry in pages.asMap().entries) {
-      final figure = figures[entry.key];
+    for (final entry in widget.pages.asMap().entries) {
+      final figure = widget.figures[entry.key];
       final figureImage = figure == null
           ? null
           : pw.MemoryImage(await File(figure.path).readAsBytes());
@@ -620,9 +630,9 @@ class DocumentPreviewPage extends StatelessWidget {
                 'Soru ${entry.key + 1}',
                 style: pw.TextStyle(font: boldFont, fontSize: 12),
               ),
-              if (ocrText[entry.key]?.isNotEmpty == true) ...[
+              if (widget.ocrText[entry.key]?.isNotEmpty == true) ...[
                 pw.Text(
-                  ocrText[entry.key]!,
+                  widget.ocrText[entry.key]!,
                   style: pw.TextStyle(font: regularFont, fontSize: 11),
                 ),
               ],
@@ -649,10 +659,13 @@ class DocumentPreviewPage extends StatelessWidget {
         build: (context) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.stretch,
           children: [
-            pw.Text(title, style: pw.TextStyle(font: boldFont, fontSize: 20)),
-            if (subtitle.isNotEmpty) ...[
+            pw.Text(
+              widget.title,
+              style: pw.TextStyle(font: boldFont, fontSize: 20),
+            ),
+            if (widget.subtitle.isNotEmpty) ...[
               pw.SizedBox(height: 4),
-              pw.Text(subtitle, style: pw.TextStyle(font: regularFont)),
+              pw.Text(widget.subtitle, style: pw.TextStyle(font: regularFont)),
             ],
             pw.SizedBox(height: 16),
             ...questionBlocks,
