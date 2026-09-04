@@ -465,6 +465,7 @@ class _ContentCapturePageState extends State<ContentCapturePage> {
                     subtitle: widget.subtitle,
                     pages: _pages,
                     ocrText: _ocrText,
+                    figures: _figures,
                   ),
                 ),
               ),
@@ -579,6 +580,7 @@ class DocumentPreviewPage extends StatelessWidget {
     required this.subtitle,
     required this.pages,
     required this.ocrText,
+    required this.figures,
     super.key,
   });
 
@@ -587,12 +589,17 @@ class DocumentPreviewPage extends StatelessWidget {
   final String subtitle;
   final List<XFile> pages;
   final Map<int, String> ocrText;
+  final Map<int, XFile> figures;
 
   Future<void> _exportPdf() async {
+    final regularFont = await PdfGoogleFonts.notoSansRegular();
+    final boldFont = await PdfGoogleFonts.notoSansBold();
     final document = pw.Document();
     for (final entry in pages.asMap().entries) {
-      final imageBytes = await File(entry.value.path).readAsBytes();
-      final image = pw.MemoryImage(imageBytes);
+      final figure = figures[entry.key];
+      final figureImage = figure == null
+          ? null
+          : pw.MemoryImage(await File(figure.path).readAsBytes());
       document.addPage(
         pw.Page(
           pageFormat: PdfPageFormat.a4,
@@ -600,23 +607,21 @@ class DocumentPreviewPage extends StatelessWidget {
           build: (context) => pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.stretch,
             children: [
-              pw.Text(
-                title,
-                style: pw.TextStyle(
-                  fontSize: 20,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
+              pw.Text(title, style: pw.TextStyle(font: boldFont, fontSize: 20)),
               if (subtitle.isNotEmpty) ...[
                 pw.SizedBox(height: 4),
-                pw.Text(subtitle),
+                pw.Text(subtitle, style: pw.TextStyle(font: regularFont)),
               ],
               pw.SizedBox(height: 16),
-              pw.Image(image, fit: pw.BoxFit.contain),
               if (ocrText[entry.key]?.isNotEmpty == true) ...[
-                pw.SizedBox(height: 12),
-                pw.Text(ocrText[entry.key]!),
+                pw.Text(
+                  ocrText[entry.key]!,
+                  style: pw.TextStyle(font: regularFont, fontSize: 12),
+                ),
+                if (figureImage != null) pw.SizedBox(height: 16),
               ],
+              if (figureImage != null)
+                pw.Center(child: pw.Image(figureImage, fit: pw.BoxFit.contain)),
             ],
           ),
         ),
@@ -669,15 +674,16 @@ class DocumentPreviewPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Image.file(
-                    File(entry.value.path),
-                    height: 220,
-                    fit: BoxFit.cover,
-                  ),
                   if (ocrText[entry.key]?.isNotEmpty == true)
                     Padding(
                       padding: const EdgeInsets.all(16),
                       child: Text(ocrText[entry.key]!),
+                    ),
+                  if (figures[entry.key] != null)
+                    Image.file(
+                      File(figures[entry.key]!.path),
+                      height: 220,
+                      fit: BoxFit.contain,
                     ),
                 ],
               ),
