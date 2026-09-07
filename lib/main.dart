@@ -9,9 +9,33 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:platform_text_recognition/platform_text_recognition.dart';
 import 'package:printing/printing.dart';
 
-void main() {
-  runApp(const PdfMakerApp());
+String formatMathForOutput(String value) {
+  const superscripts = {
+    '0': '⁰',
+    '1': '¹',
+    '2': '²',
+    '3': '³',
+    '4': '⁴',
+    '5': '⁵',
+    '6': '⁶',
+    '7': '⁷',
+    '8': '⁸',
+    '9': '⁹',
+  };
+  var result = value.replaceAllMapped(
+    RegExp(r'\^([0-9]+)'),
+    (match) =>
+        match.group(1)!.split('').map((char) => superscripts[char]).join(),
+  );
+  result = result.replaceAllMapped(
+    RegExp(r'log_([0-9]+)'),
+    (match) =>
+        'log${match.group(1)!.split('').map((char) => superscripts[char]).join()}',
+  );
+  return result.replaceAll('sqrt(', '√(');
 }
+
+void main() => runApp(const PdfMakerApp());
 
 class PdfMakerApp extends StatelessWidget {
   const PdfMakerApp({super.key});
@@ -53,158 +77,96 @@ class PdfMakerApp extends StatelessWidget {
   }
 }
 
+enum DocumentType { exam, handout }
+
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  Future<void> _createDocument(BuildContext context) async {
-    final type = await showModalBottomSheet<DocumentType>(
-      context: context,
-      showDragHandle: true,
-      backgroundColor: Colors.white,
-      builder: (context) => const DocumentTypeSheet(),
-    );
-    if (!context.mounted || type == null) return;
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => DocumentSetupPage(type: type)),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'Maker',
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            tooltip: 'Ayarlar',
-            icon: const Icon(Icons.tune_rounded),
-          ),
-          const SizedBox(width: 8),
-        ],
       ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-          children: [
-            Text(
-              'Fikirden kağıda.',
-              style: theme.textTheme.displaySmall?.copyWith(
-                color: const Color(0xFF1C2521),
-                fontWeight: FontWeight.w900,
-                letterSpacing: -1.2,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Fotoğrafını çek, içeriğini düzenle, hazırla ve paylaş.',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: const Color(0xFF59645F),
-                height: 1.35,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Card(
-              color: const Color(0xFF1D8064),
-              child: Padding(
-                padding: const EdgeInsets.all(22),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      Icons.auto_awesome_rounded,
-                      color: Color(0xFFB9E6D3),
-                      size: 28,
-                    ),
-                    const SizedBox(height: 28),
-                    Text(
-                      'Yeni bir belge\nhazırlamaya başla',
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        height: 1.08,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    FilledButton.icon(
-                      onPressed: () => _createDocument(context),
-                      icon: const Icon(Icons.add_rounded),
-                      label: const Text('Belge oluştur'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFFB9E6D3),
-                        foregroundColor: const Color(0xFF17352B),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 14,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 28),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Belgelerim',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+        children: [
+          Text(
+            'Fikirden kağıda.',
+            style: Theme.of(
+              context,
+            ).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Fotoğrafını çek, metni düzenle, şeklini yerleştir ve paylaş.',
+          ),
+          const SizedBox(height: 24),
+          Card(
+            color: const Color(0xFF1D8064),
+            child: Padding(
+              padding: const EdgeInsets.all(22),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.auto_awesome_rounded,
+                    color: Color(0xFFB9E6D3),
                   ),
-                ),
-                TextButton(onPressed: () {}, child: const Text('Tümünü gör')),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 28,
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFE8F3ED),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.description_outlined,
-                        color: Color(0xFF1D8064),
-                        size: 28,
-                      ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Yeni bir belge hazırlamaya başla',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
                     ),
-                    const SizedBox(height: 14),
-                    Text(
-                      'Henüz belgen yok',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'İlk sınavını veya ders föyünü burada oluşturabilirsin.',
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 18),
+                  FilledButton.icon(
+                    onPressed: () async {
+                      final type = await showModalBottomSheet<DocumentType>(
+                        context: context,
+                        showDragHandle: true,
+                        builder: (_) => const DocumentTypeSheet(),
+                      );
+                      if (!context.mounted || type == null) return;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => DocumentSetupPage(type: type),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.add_rounded),
+                    label: const Text('Belge oluştur'),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 28),
+          Text(
+            'Belgelerim',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 8),
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(28),
+              child: Center(child: Text('Henüz belgen yok')),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
-
-enum DocumentType { exam, handout }
 
 class DocumentTypeSheet extends StatelessWidget {
   const DocumentTypeSheet({super.key});
@@ -215,22 +177,22 @@ class DocumentTypeSheet extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Ne hazırlıyorsun?',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 18),
-          _TypeOption(
-            type: DocumentType.exam,
+          ListTile(
+            leading: const Icon(Icons.fact_check_outlined),
+            title: const Text('Sınav'),
+            subtitle: const Text('Soruları tek tek ekle ve düzenle'),
             onTap: () => Navigator.pop(context, DocumentType.exam),
           ),
-          const SizedBox(height: 12),
-          _TypeOption(
-            type: DocumentType.handout,
+          ListTile(
+            leading: const Icon(Icons.menu_book_outlined),
+            title: const Text('Ders föyü'),
+            subtitle: const Text('Metin ve görselleri düzenle'),
             onTap: () => Navigator.pop(context, DocumentType.handout),
           ),
         ],
@@ -239,44 +201,8 @@ class DocumentTypeSheet extends StatelessWidget {
   }
 }
 
-class _TypeOption extends StatelessWidget {
-  const _TypeOption({required this.type, required this.onTap});
-
-  final DocumentType type;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final isExam = type == DocumentType.exam;
-    return ListTile(
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: const BorderSide(color: Color(0xFFE4E5DF)),
-      ),
-      leading: Icon(
-        isExam ? Icons.fact_check_outlined : Icons.menu_book_outlined,
-        size: 30,
-        color: const Color(0xFF1D8064),
-      ),
-      title: Text(
-        isExam ? 'Sınav' : 'Ders föyü',
-        style: const TextStyle(fontWeight: FontWeight.w800),
-      ),
-      subtitle: Text(
-        isExam
-            ? 'Soruları sırala ve puanlandır'
-            : 'Konu anlatımı ve görselleri düzenle',
-      ),
-      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
-    );
-  }
-}
-
 class DocumentSetupPage extends StatefulWidget {
   const DocumentSetupPage({required this.type, super.key});
-
   final DocumentType type;
 
   @override
@@ -284,71 +210,53 @@ class DocumentSetupPage extends StatefulWidget {
 }
 
 class _DocumentSetupPageState extends State<DocumentSetupPage> {
-  final _titleController = TextEditingController();
-  final _subtitleController = TextEditingController();
+  final title = TextEditingController();
+  final subtitle = TextEditingController();
 
   @override
   void dispose() {
-    _titleController.dispose();
-    _subtitleController.dispose();
+    title.dispose();
+    subtitle.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isExam = widget.type == DocumentType.exam;
+    final exam = widget.type == DocumentType.exam;
     return Scaffold(
-      appBar: AppBar(title: Text(isExam ? 'Yeni sınav' : 'Yeni ders föyü')),
+      appBar: AppBar(title: Text(exam ? 'Yeni sınav' : 'Yeni ders föyü')),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Text(
-            isExam ? 'Belge bilgileri' : 'Föy bilgileri',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 20),
           TextField(
-            controller: _titleController,
+            controller: title,
             decoration: InputDecoration(
-              labelText: isExam ? 'Sınav başlığı' : 'Föy başlığı',
-              hintText: 'Örn. 8. sınıf matematik',
+              labelText: exam ? 'Sınav başlığı' : 'Föy başlığı',
             ),
           ),
           const SizedBox(height: 14),
           TextField(
-            controller: _subtitleController,
+            controller: subtitle,
             decoration: InputDecoration(
-              labelText: isExam ? 'Ders ve sınıf' : 'Konu',
-              hintText: isExam ? 'Örn. Matematik - 8/A' : 'Örn. Üçgenler',
+              labelText: exam ? 'Ders ve sınıf' : 'Konu',
             ),
           ),
           const SizedBox(height: 28),
           FilledButton.icon(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => ContentCapturePage(
-                    type: widget.type,
-                    title: _titleController.text.trim().isEmpty
-                        ? (isExam ? 'Yeni sınav' : 'Yeni ders föyü')
-                        : _titleController.text.trim(),
-                    subtitle: _subtitleController.text.trim(),
-                  ),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ContentCapturePage(
+                  type: widget.type,
+                  title: title.text.trim().isEmpty
+                      ? (exam ? 'Yeni sınav' : 'Yeni ders föyü')
+                      : title.text.trim(),
+                  subtitle: subtitle.text.trim(),
                 ),
-              );
-            },
+              ),
+            ),
             icon: const Icon(Icons.add_a_photo_outlined),
             label: const Text('İçerik eklemeye geç'),
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Kamera veya galeriden sayfa ekleyerek başlayabilirsin.',
-            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -363,7 +271,6 @@ class ContentCapturePage extends StatefulWidget {
     required this.subtitle,
     super.key,
   });
-
   final DocumentType type;
   final String title;
   final String subtitle;
@@ -373,156 +280,131 @@ class ContentCapturePage extends StatefulWidget {
 }
 
 class _ContentCapturePageState extends State<ContentCapturePage> {
-  final ImagePicker _picker = ImagePicker();
-  final ImageCropper _cropper = ImageCropper();
-  final List<XFile> _pages = [];
-  final Map<int, String> _ocrText = {};
-  final Map<int, XFile> _figures = {};
-  int? _recognizingPage;
+  final picker = ImagePicker();
+  final cropper = ImageCropper();
+  final pages = <XFile>[];
+  final texts = <int, String>{};
+  final figures = <int, XFile>{};
+  int? busy;
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  Future<void> _pickPage(ImageSource source) async {
-    final image = await _picker.pickImage(source: source, imageQuality: 90);
-    if (!mounted || image == null) return;
-    final cropped = await _cropper.cropImage(
-      sourcePath: image.path,
+  Future<XFile?> crop(String path, String title) async {
+    final result = await cropper.cropImage(
+      sourcePath: path,
       compressQuality: 92,
       uiSettings: [
         AndroidUiSettings(
-          toolbarTitle: 'Sayfayı kırp',
+          toolbarTitle: title,
           toolbarColor: const Color(0xFF1D8064),
           toolbarWidgetColor: Colors.white,
-          activeControlsWidgetColor: const Color(0xFF1D8064),
-          lockAspectRatio: false,
         ),
-        IOSUiSettings(title: 'Sayfayı kırp'),
+        IOSUiSettings(title: title),
       ],
     );
-    if (!mounted || cropped == null) return;
-    setState(() => _pages.add(XFile(cropped.path)));
+    return result == null ? null : XFile(result.path);
   }
 
-  Future<void> _recognizePage(int index) async {
-    setState(() => _recognizingPage = index);
+  Future<void> addQuestion(ImageSource source) async {
+    final image = await picker.pickImage(source: source, imageQuality: 90);
+    if (!mounted || image == null) return;
+    final result = await crop(image.path, 'Soruyu kırp');
+    if (!mounted || result == null) return;
+    setState(() => pages.add(result));
+  }
+
+  Future<void> extractText(int index) async {
+    setState(() => busy = index);
     try {
       final text = await PlatformTextRecognizer.instance.recognizeText(
-        _pages[index].path,
+        pages[index].path,
         script: TextRecognitionScript.latin,
         languages: const ['tr-TR'],
       );
       if (!mounted) return;
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
           builder: (_) => OcrEditorPage(
             pageNumber: index + 1,
-            imagePath: _pages[index].path,
+            imagePath: pages[index].path,
             initialText: text,
-            onSave: (value) => _ocrText[index] = value,
+            onSave: (value) => texts[index] = value,
           ),
         ),
       );
     } finally {
-      if (mounted) setState(() => _recognizingPage = null);
+      if (mounted) setState(() => busy = null);
     }
   }
 
-  Future<void> _cropFigure(int index) async {
-    final cropped = await _cropper.cropImage(
-      sourcePath: _pages[index].path,
-      compressQuality: 92,
-      uiSettings: [
-        AndroidUiSettings(
-          toolbarTitle: 'Şekli kırp',
-          toolbarColor: const Color(0xFF1D8064),
-          toolbarWidgetColor: Colors.white,
-          activeControlsWidgetColor: const Color(0xFF1D8064),
-          lockAspectRatio: false,
+  Future<void> addFigure(int index) async {
+    final result = await crop(pages[index].path, 'Şekli seç');
+    if (!mounted || result == null) return;
+    setState(() => figures[index] = result);
+  }
+
+  void openPreview() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DocumentPreviewPage(
+          type: widget.type,
+          title: widget.title,
+          subtitle: widget.subtitle,
+          pages: pages,
+          texts: texts,
+          figures: figures,
         ),
-        IOSUiSettings(title: 'Şekli kırp'),
-      ],
+      ),
     );
-    if (!mounted || cropped == null) return;
-    setState(() => _figures[index] = XFile(cropped.path));
   }
 
   @override
   Widget build(BuildContext context) {
-    final isExam = widget.type == DocumentType.exam;
     return Scaffold(
       appBar: AppBar(
-        title: Text(isExam ? 'Sınav içeriği' : 'Föy içeriği'),
+        title: Text(
+          widget.type == DocumentType.exam ? 'Sınav içeriği' : 'Föy içeriği',
+        ),
         actions: [
-          if (_pages.isNotEmpty)
+          if (pages.isNotEmpty)
             IconButton(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => DocumentPreviewPage(
-                    type: widget.type,
-                    title: widget.title,
-                    subtitle: widget.subtitle,
-                    pages: _pages,
-                    ocrText: _ocrText,
-                    figures: _figures,
-                  ),
-                ),
-              ),
-              tooltip: 'Belgeyi önizle',
+              onPressed: openPreview,
               icon: const Icon(Icons.preview_outlined),
             ),
         ],
       ),
-      body: _pages.isEmpty
-          ? _EmptyCaptureState(
-              onCamera: () => _pickPage(ImageSource.camera),
-              onGallery: () => _pickPage(ImageSource.gallery),
+      body: pages.isEmpty
+          ? _EmptyCapture(
+              onGallery: () => addQuestion(ImageSource.gallery),
+              onCamera: () => addQuestion(ImageSource.camera),
             )
           : ListView(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+              padding: const EdgeInsets.all(20),
               children: [
                 Text(
-                  'Sayfalar',
+                  '${pages.length} soru eklendi',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  '${_pages.length} soru eklendi. Her soruyu tek tek düzenleyebilirsin.',
-                ),
-                const SizedBox(height: 18),
-                ..._pages.asMap().entries.map(
+                const SizedBox(height: 16),
+                ...pages.asMap().entries.map(
                   (entry) => Card(
-                    clipBehavior: Clip.antiAlias,
                     margin: const EdgeInsets.only(bottom: 14),
+                    clipBehavior: Clip.antiAlias,
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Image.file(
                           File(entry.value.path),
-                          height: 220,
+                          height: 180,
                           fit: BoxFit.cover,
                         ),
                         ListTile(
-                          leading: CircleAvatar(
-                            child: Text('${entry.key + 1}'),
-                          ),
                           title: Text('Soru ${entry.key + 1}'),
-                          subtitle: _ocrText.containsKey(entry.key)
-                              ? Text(
-                                  _figures.containsKey(entry.key)
-                                      ? 'Metin ve şekil hazır'
-                                      : 'OCR metni düzenlendi',
-                                )
-                              : null,
-                          trailing: IconButton(
-                            onPressed: () =>
-                                setState(() => _pages.removeAt(entry.key)),
-                            tooltip: 'Soruyu kaldır',
-                            icon: const Icon(Icons.delete_outline_rounded),
+                          subtitle: Text(
+                            texts.containsKey(entry.key)
+                                ? 'Metin hazır'
+                                : 'Metin bekliyor',
                           ),
                         ),
                         Padding(
@@ -531,33 +413,27 @@ class _ContentCapturePageState extends State<ContentCapturePage> {
                             children: [
                               Expanded(
                                 child: OutlinedButton.icon(
-                                  onPressed: _recognizingPage == entry.key
+                                  onPressed: busy == entry.key
                                       ? null
-                                      : () => _recognizePage(entry.key),
-                                  icon: _recognizingPage == entry.key
-                                      ? const SizedBox(
-                                          width: 18,
-                                          height: 18,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
-                                        )
-                                      : const Icon(Icons.text_fields_rounded),
+                                      : () => extractText(entry.key),
+                                  icon: const Icon(Icons.text_fields),
                                   label: Text(
-                                    _recognizingPage == entry.key
-                                        ? 'Metin çıkarılıyor'
+                                    busy == entry.key
+                                        ? 'Çıkarılıyor'
                                         : 'Metni çıkar',
                                   ),
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              OutlinedButton.icon(
-                                onPressed: () => _cropFigure(entry.key),
-                                icon: const Icon(Icons.crop_rounded),
-                                label: Text(
-                                  _figures.containsKey(entry.key)
-                                      ? 'Şekli değiştir'
-                                      : 'Şekli seç',
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () => addFigure(entry.key),
+                                  icon: const Icon(Icons.crop),
+                                  label: Text(
+                                    figures.containsKey(entry.key)
+                                        ? 'Şekli değiştir'
+                                        : 'Şekli seç',
+                                  ),
                                 ),
                               ),
                             ],
@@ -568,8 +444,8 @@ class _ContentCapturePageState extends State<ContentCapturePage> {
                   ),
                 ),
                 OutlinedButton.icon(
-                  onPressed: () => _pickPage(ImageSource.gallery),
-                  icon: const Icon(Icons.add_photo_alternate_outlined),
+                  onPressed: () => addQuestion(ImageSource.gallery),
+                  icon: const Icon(Icons.add),
                   label: const Text('Başka soru ekle'),
                 ),
               ],
@@ -584,16 +460,15 @@ class DocumentPreviewPage extends StatefulWidget {
     required this.title,
     required this.subtitle,
     required this.pages,
-    required this.ocrText,
+    required this.texts,
     required this.figures,
     super.key,
   });
-
   final DocumentType type;
   final String title;
   final String subtitle;
   final List<XFile> pages;
-  final Map<int, String> ocrText;
+  final Map<int, String> texts;
   final Map<int, XFile> figures;
 
   @override
@@ -601,69 +476,92 @@ class DocumentPreviewPage extends StatefulWidget {
 }
 
 class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
-  Future<void> _exportPdf() async {
-    final regularFont = pw.Font.ttf(
+  final positions = <int, double>{};
+
+  double positionFor(int index) => positions[index] ?? 0.0;
+
+  void moveFigure(int index, DragUpdateDetails details) {
+    setState(
+      () => positions[index] = (positionFor(index) + details.delta.dy / 260)
+          .clamp(-0.20, 0.75),
+    );
+  }
+
+  Future<void> editQuestion(int index) async {
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OcrEditorPage(
+          pageNumber: index + 1,
+          imagePath: widget.pages[index].path,
+          initialText: widget.texts[index] ?? '',
+          onSave: (value) => widget.texts[index] = value,
+        ),
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
+  Future<void> exportPdf() async {
+    final regular = pw.Font.ttf(
       await rootBundle.load('assets/fonts/ArialUnicode.ttf'),
     );
-    final boldFont = pw.Font.ttf(
+    final bold = pw.Font.ttf(
       await rootBundle.load('assets/fonts/ArialBold.ttf'),
     );
     final document = pw.Document();
-    final questionBlocks = <pw.Widget>[];
-    for (final entry in widget.pages.asMap().entries) {
-      final figure = widget.figures[entry.key];
-      final figureImage = figure == null
-          ? null
-          : pw.MemoryImage(await File(figure.path).readAsBytes());
-      questionBlocks.add(
-        pw.Container(
-          margin: const pw.EdgeInsets.only(bottom: 14),
-          child: pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-            children: [
-              pw.Text(
-                'Soru ${entry.key + 1}',
-                style: pw.TextStyle(font: boldFont, fontSize: 12),
-              ),
-              if (widget.ocrText[entry.key]?.isNotEmpty == true) ...[
-                pw.Text(
-                  widget.ocrText[entry.key]!,
-                  style: pw.TextStyle(font: regularFont, fontSize: 11),
-                ),
-              ],
-              if (figureImage != null) ...[
-                pw.SizedBox(height: 8),
-                pw.Center(
-                  child: pw.Image(
-                    figureImage,
-                    width: 220,
-                    height: 150,
-                    fit: pw.BoxFit.contain,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      );
-    }
     document.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(24),
-        build: (context) => pw.Column(
+        build: (_) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.stretch,
           children: [
             pw.Text(
               widget.title,
-              style: pw.TextStyle(font: boldFont, fontSize: 20),
+              style: pw.TextStyle(font: bold, fontSize: 20),
             ),
-            if (widget.subtitle.isNotEmpty) ...[
-              pw.SizedBox(height: 4),
-              pw.Text(widget.subtitle, style: pw.TextStyle(font: regularFont)),
-            ],
+            if (widget.subtitle.isNotEmpty)
+              pw.Text(widget.subtitle, style: pw.TextStyle(font: regular)),
             pw.SizedBox(height: 16),
-            ...questionBlocks,
+            ...widget.pages.asMap().entries.map((entry) {
+              final figure = widget.figures[entry.key];
+              final image = figure == null
+                  ? null
+                  : pw.MemoryImage(File(figure.path).readAsBytesSync());
+              return pw.Container(
+                margin: const pw.EdgeInsets.only(bottom: 14),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+                  children: [
+                    pw.Text(
+                      'Soru ${entry.key + 1}',
+                      style: pw.TextStyle(font: bold, fontSize: 12),
+                    ),
+                    if (widget.texts[entry.key]?.isNotEmpty == true)
+                      pw.Text(
+                        formatMathForOutput(widget.texts[entry.key]!),
+                        style: pw.TextStyle(font: regular, fontSize: 11),
+                      ),
+                    if (image != null)
+                      pw.SizedBox(
+                        height: 130,
+                        child: pw.Transform.translate(
+                          offset: PdfPoint(0, -positionFor(entry.key) * 130),
+                          child: pw.Center(
+                            child: pw.Image(
+                              image,
+                              width: 170,
+                              height: 120,
+                              fit: pw.BoxFit.contain,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            }),
           ],
         ),
       ),
@@ -673,14 +571,12 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isExam = widget.type == DocumentType.exam;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Belge önizleme'),
+        title: const Text('Sayfayı düzenle'),
         actions: [
           IconButton(
-            onPressed: _exportPdf,
-            tooltip: 'PDF olarak dışa aktar',
+            onPressed: exportPdf,
             icon: const Icon(Icons.picture_as_pdf_outlined),
           ),
         ],
@@ -694,54 +590,59 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
               context,
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
           ),
-          if (widget.subtitle.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              widget.subtitle,
-              style: const TextStyle(color: Color(0xFF59645F)),
-            ),
-          ],
-          const SizedBox(height: 20),
-          Card(
-            color: const Color(0xFFE8F3ED),
-            child: ListTile(
-              leading: const Icon(Icons.check_circle_outline),
-              title: Text(isExam ? 'Sınav taslağı hazır' : 'Föy taslağı hazır'),
-              subtitle: Text(
-                '${widget.pages.length} soru aynı sayfaya eklendi',
-              ),
-            ),
+          const SizedBox(height: 8),
+          const Text(
+            'Her soru kendi alanında kalır. Şekli sürükleyerek metnin istediğin yerine taşı.',
           ),
           const SizedBox(height: 18),
           ...widget.pages.asMap().entries.map(
             (entry) => Card(
-              clipBehavior: Clip.antiAlias,
               margin: const EdgeInsets.only(bottom: 14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (widget.ocrText[entry.key]?.isNotEmpty == true)
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Text(widget.ocrText[entry.key]!),
+              child: SizedBox(
+                height: 300,
+                child: Stack(
+                  children: [
+                    Positioned(
+                      left: 16,
+                      right: 16,
+                      top: 16,
+                      child: Text(
+                        'Soru ${entry.key + 1}\n${formatMathForOutput(widget.texts[entry.key] ?? '')}',
+                      ),
                     ),
-                  if (widget.figures[entry.key] != null)
-                    Image.file(
-                      File(widget.figures[entry.key]!.path),
-                      height: 220,
-                      fit: BoxFit.contain,
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: IconButton(
+                        onPressed: () => editQuestion(entry.key),
+                        tooltip: 'Soruyu düzenle',
+                        icon: const Icon(Icons.edit_outlined),
+                      ),
                     ),
-                ],
+                    if (widget.figures[entry.key] != null)
+                      Positioned(
+                        left: 72,
+                        top: 150 + positionFor(entry.key) * 220,
+                        child: GestureDetector(
+                          onPanUpdate: (details) =>
+                              moveFigure(entry.key, details),
+                          child: Image.file(
+                            File(widget.figures[entry.key]!.path),
+                            width: 170,
+                            height: 120,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
           FilledButton.icon(
-            onPressed: _exportPdf,
+            onPressed: exportPdf,
             icon: const Icon(Icons.picture_as_pdf_outlined),
             label: const Text('PDF olarak dışa aktar'),
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 15),
-            ),
           ),
         ],
       ),
@@ -757,7 +658,6 @@ class OcrEditorPage extends StatefulWidget {
     required this.onSave,
     super.key,
   });
-
   final int pageNumber;
   final String imagePath;
   final String initialText;
@@ -768,76 +668,90 @@ class OcrEditorPage extends StatefulWidget {
 }
 
 class _OcrEditorPageState extends State<OcrEditorPage> {
-  late final TextEditingController _controller = TextEditingController(
-    text: widget.initialText,
-  );
+  late final controller = TextEditingController(text: widget.initialText);
 
   @override
   void dispose() {
-    _controller.dispose();
+    controller.dispose();
     super.dispose();
   }
 
-  void _save() {
-    widget.onSave(_controller.text.trim());
-    Navigator.of(context).pop();
+  void save() {
+    widget.onSave(controller.text.trim());
+    Navigator.pop(context);
+  }
+
+  void insertMath(String value) {
+    final selection = controller.selection;
+    final start = selection.isValid ? selection.start : controller.text.length;
+    final end = selection.isValid ? selection.end : start;
+    final text = controller.text.replaceRange(start, end, value);
+    controller.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: start + value.length),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Sayfa ${widget.pageNumber} metni'),
-        actions: [
-          IconButton(
-            onPressed: _save,
-            tooltip: 'Metni kaydet',
-            icon: const Icon(Icons.check_rounded),
-          ),
-        ],
+        title: Text('Soru ${widget.pageNumber} metni'),
+        actions: [IconButton(onPressed: save, icon: const Icon(Icons.check))],
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+        padding: const EdgeInsets.all(20),
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Image.file(
-              File(widget.imagePath),
-              height: 220,
-              fit: BoxFit.cover,
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'OCR metni',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 8),
+          Image.file(File(widget.imagePath), height: 220, fit: BoxFit.contain),
+          const SizedBox(height: 16),
           TextField(
-            controller: _controller,
+            controller: controller,
             minLines: 8,
             maxLines: null,
-            textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(
-              hintText: 'Metin bulunamadıysa buraya kendin yazabilirsin.',
-              alignLabelWithHint: true,
-            ),
+            decoration: const InputDecoration(hintText: 'Metni düzenle'),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Matematik ifadeleri',
+            style: TextStyle(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton(
+                onPressed: () => insertMath('x^2'),
+                child: const Text('Üs  x²'),
+              ),
+              OutlinedButton(
+                onPressed: () => insertMath('log_2(x)'),
+                child: const Text('log'),
+              ),
+              OutlinedButton(
+                onPressed: () => insertMath('√(x)'),
+                child: const Text('√ kök'),
+              ),
+              OutlinedButton(
+                onPressed: () => insertMath('(a)/(b)'),
+                child: const Text('Kesir'),
+              ),
+              OutlinedButton(
+                onPressed: () => insertMath('π'),
+                child: const Text('π'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Şablonu metin içinde istediğin yere ekleyip düzenleyebilirsin: x^2, log_2(x), √(x).',
+            style: TextStyle(fontSize: 12, color: Color(0xFF59645F)),
           ),
           const SizedBox(height: 16),
           FilledButton.icon(
-            onPressed: _save,
+            onPressed: save,
             icon: const Icon(Icons.save_outlined),
             label: const Text('Metni kaydet'),
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 15),
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Formül, tablo veya şekiller bozulursa sayfayı görsel olarak kullanmaya devam edebilirsin.',
-            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -845,42 +759,28 @@ class _OcrEditorPageState extends State<OcrEditorPage> {
   }
 }
 
-class _EmptyCaptureState extends StatelessWidget {
-  const _EmptyCaptureState({required this.onCamera, required this.onGallery});
-
-  final VoidCallback onCamera;
+class _EmptyCapture extends StatelessWidget {
+  const _EmptyCapture({required this.onGallery, required this.onCamera});
   final VoidCallback onGallery;
+  final VoidCallback onCamera;
 
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: SingleChildScrollView(
+      child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(22),
-              decoration: const BoxDecoration(
-                color: Color(0xFFE8F3ED),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.document_scanner_outlined,
-                color: Color(0xFF1D8064),
-                size: 48,
-              ),
+            const Icon(
+              Icons.document_scanner_outlined,
+              size: 60,
+              color: Color(0xFF1D8064),
             ),
-            const SizedBox(height: 20),
-            Text(
-              'İlk sayfanı ekle',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 18),
             const Text(
-              'Kitap veya çalışma kağıdını fotoğraflayabilir ya da galeriden seçebilirsin.',
-              textAlign: TextAlign.center,
+              'İlk sayfanı ekle',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -889,9 +789,6 @@ class _EmptyCaptureState extends StatelessWidget {
                 onPressed: onCamera,
                 icon: const Icon(Icons.camera_alt_outlined),
                 label: const Text('Kamerayla çek'),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -901,9 +798,6 @@ class _EmptyCaptureState extends StatelessWidget {
                 onPressed: onGallery,
                 icon: const Icon(Icons.photo_library_outlined),
                 label: const Text('Galeriden seç'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                ),
               ),
             ),
           ],
