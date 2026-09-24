@@ -97,23 +97,7 @@ class _PdfMakerAppState extends State<PdfMakerApp> {
     const ink = Color(0xFF1C1C1A);
     const muted = Color(0xFF68655F);
     const accent = Color(0xFFB5472B);
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Maker',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: accent),
-        scaffoldBackgroundColor: paper,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: paper,
-          foregroundColor: ink,
-          elevation: 0,
-        ),
-        textTheme: ThemeData.light().textTheme.apply(
-          bodyColor: ink,
-          displayColor: ink,
-          fontFamily: 'Georgia',
-        ),
-        final lightTheme = ThemeData(
+    final lightTheme = ThemeData(
           brightness: Brightness.light,
           colorScheme: ColorScheme.fromSeed(seedColor: accent),
           scaffoldBackgroundColor: paper,
@@ -174,15 +158,15 @@ class _PdfMakerAppState extends State<PdfMakerApp> {
           filledButtonTheme: _filledButtonTheme(const Color(0xFFE07A54)),
           outlinedButtonTheme: _outlinedButtonTheme(const Color(0xFFEFECE6), dark: true),
         );
-        return MaterialApp(
-          color: Colors.white,
-          elevation: 0,
-          theme: lightTheme,
-          darkTheme: darkTheme,
-          themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
-          home: HomePage(isDarkMode: _isDarkMode, onToggleTheme: _toggleTheme),
-  State<HomePage> createState() => _HomePageState();
-}
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Maker',
+      theme: lightTheme,
+      darkTheme: darkTheme,
+      themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      home: HomePage(isDarkMode: _isDarkMode, onToggleTheme: _toggleTheme),
+    );
+  }
 
       InputDecorationTheme _inputTheme(Color muted, Color accent, {bool dark = false}) {
         final fill = dark ? const Color(0xFF26241F) : const Color(0xFFF8F6F1);
@@ -205,6 +189,16 @@ class _PdfMakerAppState extends State<PdfMakerApp> {
       OutlinedButtonThemeData _outlinedButtonTheme(Color ink, {bool dark = false}) => OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(foregroundColor: ink, side: BorderSide(color: dark ? const Color(0xFF3A3733) : const Color(0xFFDDD8CF)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
       );
+
+class HomePage extends StatefulWidget {
+  const HomePage({required this.isDarkMode, required this.onToggleTheme, super.key});
+
+  final bool isDarkMode;
+  final VoidCallback onToggleTheme;
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
 
 class _HomePageState extends State<HomePage> {
   List<Map<String, dynamic>> _drafts = [];
@@ -237,9 +231,15 @@ class _HomePageState extends State<HomePage> {
         ),
         actions: [
           IconButton(
-            onPressed: () {},
-            tooltip: 'Tema ayarları',
-            icon: const Icon(Icons.brightness_6_outlined),
+            onPressed: widget.onToggleTheme,
+            tooltip: widget.isDarkMode
+                ? 'Açık temaya geç'
+                : 'Karanlık temaya geç',
+            icon: Icon(
+              widget.isDarkMode
+                  ? Icons.light_mode_outlined
+                  : Icons.dark_mode_outlined,
+            ),
           ),
         ],
       ),
@@ -262,7 +262,6 @@ class _HomePageState extends State<HomePage> {
           ),
           const SizedBox(height: 16),
           Card(
-            color: Colors.white,
             child: Padding(
               padding: const EdgeInsets.all(14),
               child: Column(
