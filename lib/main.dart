@@ -66,33 +66,69 @@ class PdfMakerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const paper = Color(0xFFF7F4EE);
+    const paper = Color(0xFFF3F3F0);
+    const ink = Color(0xFF1C1C1A);
+    const muted = Color(0xFF68655F);
+    const accent = Color(0xFFB5472B);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Maker',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1D8064)),
+        colorScheme: ColorScheme.fromSeed(seedColor: accent),
         scaffoldBackgroundColor: paper,
         appBarTheme: const AppBarTheme(
           backgroundColor: paper,
-          foregroundColor: Color(0xFF1C2521),
+          foregroundColor: ink,
           elevation: 0,
+        ),
+        textTheme: ThemeData.light().textTheme.apply(
+          bodyColor: ink,
+          displayColor: ink,
+          fontFamily: 'Georgia',
         ),
         cardTheme: CardThemeData(
           color: Colors.white,
           elevation: 0,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-            side: const BorderSide(color: Color(0xFFE4E5DF)),
+            borderRadius: BorderRadius.circular(10),
+            side: const BorderSide(color: Color(0xFFDDD8CF)),
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Colors.white,
+          fillColor: Color(0xFFF8F6F1),
+          labelStyle: TextStyle(color: muted, fontFamily: 'sans-serif'),
+          hintStyle: TextStyle(color: muted, fontFamily: 'sans-serif'),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.circular(6),
+            borderSide: BorderSide(color: Color(0xFFDDD8CF)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(6),
+            borderSide: BorderSide(color: Color(0xFFDDD8CF)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(6),
+            borderSide: BorderSide(color: accent, width: 1.5),
+          ),
+        ),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            backgroundColor: accent,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: ink,
+            side: const BorderSide(color: Color(0xFFDDD8CF)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+            ),
           ),
         ),
       ),
@@ -137,45 +173,51 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text(
           'Maker',
-          style: TextStyle(fontWeight: FontWeight.w800),
+          style: TextStyle(fontWeight: FontWeight.w700),
         ),
+        actions: [
+          IconButton(
+            onPressed: () {},
+            tooltip: 'Tema ayarları',
+            icon: const Icon(Icons.brightness_6_outlined),
+          ),
+        ],
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: [
           Text(
-            'Fikirden kağıda.',
+            'Soru & Konu PDF Hazırlayıcı',
             style: Theme.of(
               context,
-            ).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w900),
+            ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           const Text(
-            'Fotoğrafını çek, metni düzenle, şeklini yerleştir ve paylaş.',
+            'Fotoğraf çek / galeriden seç → düzenle → PDF indir',
+            style: TextStyle(
+              color: Color(0xFF68655F),
+              fontFamily: 'sans-serif',
+            ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           Card(
-            color: const Color(0xFF1D8064),
+            color: Colors.white,
             child: Padding(
-              padding: const EdgeInsets.all(22),
+              padding: const EdgeInsets.all(14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    Icons.auto_awesome_rounded,
-                    color: Color(0xFFB9E6D3),
-                  ),
-                  const SizedBox(height: 24),
                   const Text(
-                    'Yeni bir belge hazırlamaya başla',
+                    'Öğe Ekle',
                     style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
+                      fontFamily: 'sans-serif',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 18),
-                  FilledButton.icon(
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
                     onPressed: () async {
                       final type = await showModalBottomSheet<DocumentType>(
                         context: context,
@@ -193,23 +235,42 @@ class _HomePageState extends State<HomePage> {
                     icon: const Icon(Icons.add_rounded),
                     label: const Text('Belge oluştur'),
                   ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Sınav veya konu anlatımı seçerek soru ve görselleri tek tek ekleyebilirsin.',
+                    style: TextStyle(
+                      color: Color(0xFF68655F),
+                      fontFamily: 'sans-serif',
+                      fontSize: 12,
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 28),
-          Text(
-            'Belgelerim',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+          const Text(
+            'Öğeler / Taslaklar',
+            style: TextStyle(
+              fontFamily: 'sans-serif',
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           const SizedBox(height: 8),
           if (_drafts.isEmpty)
             const Card(
               child: Padding(
                 padding: EdgeInsets.all(28),
-                child: Center(child: Text('Henüz belgen yok')),
+                child: Center(
+                  child: Text(
+                    'Henüz belgen yok',
+                    style: TextStyle(
+                      color: Color(0xFF68655F),
+                      fontFamily: 'sans-serif',
+                    ),
+                  ),
+                ),
               ),
             )
           else
@@ -217,7 +278,10 @@ class _HomePageState extends State<HomePage> {
               (draft) => Card(
                 margin: const EdgeInsets.only(bottom: 10),
                 child: ListTile(
-                  leading: const Icon(Icons.description_outlined),
+                  leading: const Icon(
+                    Icons.description_outlined,
+                    color: Color(0xFFB5472B),
+                  ),
                   title: Text(draft['title'] as String? ?? 'Adsız belge'),
                   subtitle: Text(
                     '${(draft['questions'] as List<dynamic>? ?? []).length} soru taslağı',
@@ -243,16 +307,24 @@ class DocumentTypeSheet extends StatelessWidget {
         children: [
           const Text(
             'Ne hazırlıyorsun?',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 18),
           ListTile(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+              side: const BorderSide(color: Color(0xFFDDD8CF)),
+            ),
             leading: const Icon(Icons.fact_check_outlined),
             title: const Text('Sınav'),
             subtitle: const Text('Soruları tek tek ekle ve düzenle'),
             onTap: () => Navigator.pop(context, DocumentType.exam),
           ),
           ListTile(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+              side: const BorderSide(color: Color(0xFFDDD8CF)),
+            ),
             leading: const Icon(Icons.menu_book_outlined),
             title: const Text('Ders föyü'),
             subtitle: const Text('Metin ve görselleri düzenle'),
@@ -289,8 +361,17 @@ class _DocumentSetupPageState extends State<DocumentSetupPage> {
     return Scaffold(
       appBar: AppBar(title: Text(exam ? 'Yeni sınav' : 'Yeni ders föyü')),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: [
+          Text(
+            exam ? 'Öğe Ekle' : 'Konu Ekle',
+            style: const TextStyle(
+              fontFamily: 'sans-serif',
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 10),
           TextField(
             controller: title,
             decoration: InputDecoration(
