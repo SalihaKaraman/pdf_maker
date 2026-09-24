@@ -9,6 +9,9 @@ PODS:
     - Flutter
   - printing (1.0.0):
     - Flutter
+  - shared_preferences_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
   - TOCropViewController (2.7.4)
 
 DEPENDENCIES:
@@ -17,6 +20,7 @@ DEPENDENCIES:
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - platform_text_recognition (from `.symlinks/plugins/platform_text_recognition/ios`)
   - printing (from `.symlinks/plugins/printing/ios`)
+  - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
 
 SPEC REPOS:
   trunk:
@@ -33,6 +37,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/platform_text_recognition/ios"
   printing:
     :path: ".symlinks/plugins/printing/ios"
+  shared_preferences_foundation:
+    :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
 
 SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
@@ -40,6 +46,7 @@ SPEC CHECKSUMS:
   image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
   platform_text_recognition: 828e1f2ae430d109c3686a58ac5c5f0be18070bc
   printing: 54ff03f28fe9ba3aa93358afb80a8595a071dd07
+  shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
   TOCropViewController: 80b8985ad794298fb69d3341de183f33d1853654
 
 PODFILE CHECKSUM: 07de65af562856e27e5951c84a3a6721564f5f7f

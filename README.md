@@ -14,10 +14,11 @@
 - Sorunun metnini ve seçilen şeklini PDF'e aktarma
 - Türkçe karakter destekli PDF fontları
 - PDF önizleme ve işletim sisteminin paylaşım/çıktı ekranı
+- Yerel taslak kaydı ve son taslakların ana ekranda listelenmesi
 
 ## Geliştirme durumu
 
-Çalışan MVP akışı: ana ekran, belge türü seçimi, belge bilgileri, kamera/galeri üzerinden soru ekleme, soru ve şekil kırpma, cihaz üzerinde OCR, metin düzenleme, matematik ifadeleri ekleme, PDF öncesi soru düzenleme, önizleme ve PDF dışa aktarma.
+Çalışan MVP akışı: ana ekran, belge türü seçimi, belge bilgileri, kamera/galeri üzerinden soru ekleme, soru ve şekil kırpma, cihaz üzerinde OCR, metin düzenleme, matematik ifadeleri ekleme, PDF öncesi soru düzenleme, yerel taslak kaydı, önizleme ve PDF dışa aktarma.
 
 ## Mevcut kullanım akışı
 
@@ -29,6 +30,7 @@
 6. `Başka soru ekle` ile sorular tek tek aynı belgeye eklenir.
 7. Önizleme ekranında her soru tekrar düzenlenebilir ve şekil sürüklenebilir.
 8. PDF oluşturulduğunda sorular aynı sayfada metin ve seçilen şekilleriyle yer alır.
+9. Önizleme açıldığında belge başlığı, türü ve soru metinleri yerel taslak olarak kaydedilir.
 
 ## Mimari
 
@@ -53,7 +55,7 @@ flutter run
 
 ## Henüz tamamlanmayanlar
 
-- Yerel taslak kaydı ve uygulama açıldığında son belgeler listesi
+- Taslaklara ait görsel dosyalarının kalıcı belge modeline taşınması
 - Soru sıralama ve soruları farklı PDF sayfalarına dağıtma
 - Görsel temizleme ve otomatik belge kenarı algılama
 - Sınav soru puanı, öğrenci bilgileri ve cevap alanları

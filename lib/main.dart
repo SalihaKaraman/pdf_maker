@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +9,29 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:platform_text_recognition/platform_text_recognition.dart';
 import 'package:printing/printing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+const _draftsKey = 'maker_drafts';
+
+Future<void> saveDraft({
+  required String title,
+  required String subtitle,
+  required DocumentType type,
+  required Iterable<String> questions,
+}) async {
+  final preferences = await SharedPreferences.getInstance();
+  final drafts = preferences.getStringList(_draftsKey) ?? <String>[];
+  final draft = jsonEncode({
+    'title': title,
+    'subtitle': subtitle,
+    'type': type.name,
+    'questions': questions.toList(),
+    'savedAt': DateTime.now().toIso8601String(),
+  });
+  drafts.removeWhere((item) => jsonDecode(item)['title'] == title);
+  drafts.insert(0, draft);
+  await preferences.setStringList(_draftsKey, drafts.take(10).toList());
+}
 
 String formatMathForOutput(String value) {
   const superscripts = {
@@ -79,8 +103,33 @@ class PdfMakerApp extends StatelessWidget {
 
 enum DocumentType { exam, handout }
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  List<Map<String, dynamic>> _drafts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDrafts();
+  }
+
+  Future<void> _loadDrafts() async {
+    final preferences = await SharedPreferences.getInstance();
+    final stored = preferences.getStringList(_draftsKey) ?? <String>[];
+    if (!mounted) return;
+    setState(() {
+      _drafts = stored
+          .map((item) => jsonDecode(item))
+          .whereType<Map<String, dynamic>>()
+          .toList();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -156,12 +205,26 @@ class HomePage extends StatelessWidget {
             ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 8),
-          const Card(
-            child: Padding(
-              padding: EdgeInsets.all(28),
-              child: Center(child: Text('Henüz belgen yok')),
+          if (_drafts.isEmpty)
+            const Card(
+              child: Padding(
+                padding: EdgeInsets.all(28),
+                child: Center(child: Text('Henüz belgen yok')),
+              ),
+            )
+          else
+            ..._drafts.map(
+              (draft) => Card(
+                margin: const EdgeInsets.only(bottom: 10),
+                child: ListTile(
+                  leading: const Icon(Icons.description_outlined),
+                  title: Text(draft['title'] as String? ?? 'Adsız belge'),
+                  subtitle: Text(
+                    '${(draft['questions'] as List<dynamic>? ?? []).length} soru taslağı',
+                  ),
+                ),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -342,7 +405,14 @@ class _ContentCapturePageState extends State<ContentCapturePage> {
     setState(() => figures[index] = result);
   }
 
-  void openPreview() {
+  Future<void> openPreview() async {
+    await saveDraft(
+      title: widget.title,
+      subtitle: widget.subtitle,
+      type: widget.type,
+      questions: texts.values,
+    );
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -575,6 +645,16 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
       appBar: AppBar(
         title: const Text('Sayfayı düzenle'),
         actions: [
+          IconButton(
+            onPressed: () => saveDraft(
+              title: widget.title,
+              subtitle: widget.subtitle,
+              type: widget.type,
+              questions: widget.texts.values,
+            ),
+            tooltip: 'Taslağı kaydet',
+            icon: const Icon(Icons.bookmark_border_rounded),
+          ),
           IconButton(
             onPressed: exportPdf,
             icon: const Icon(Icons.picture_as_pdf_outlined),
