@@ -914,7 +914,7 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
         case ImagePosition.above:
           body = pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [if (imageWidget != null) imageWidget, text],
+            children: [imageWidget ?? pw.SizedBox(), text],
           );
       }
       return pw.Container(
