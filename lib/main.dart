@@ -139,6 +139,10 @@ class PdfMakerApp extends StatelessWidget {
 
 enum DocumentType { exam, handout }
 
+enum PageStyle { exam, book }
+
+enum ImagePosition { above, left, right }
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -347,6 +351,9 @@ class DocumentSetupPage extends StatefulWidget {
 class _DocumentSetupPageState extends State<DocumentSetupPage> {
   final title = TextEditingController();
   final subtitle = TextEditingController();
+  PageStyle pageStyle = PageStyle.exam;
+  int columns = 1;
+  bool showStudentFields = true;
 
   @override
   void dispose() {
@@ -385,6 +392,45 @@ class _DocumentSetupPageState extends State<DocumentSetupPage> {
               labelText: exam ? 'Ders ve sınıf' : 'Konu',
             ),
           ),
+          const SizedBox(height: 18),
+          const Text(
+            'Sayfa düzeni',
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<PageStyle>(
+            initialValue: pageStyle,
+            decoration: const InputDecoration(labelText: 'Format'),
+            items: const [
+              DropdownMenuItem(
+                value: PageStyle.exam,
+                child: Text('Sınav formatı'),
+              ),
+              DropdownMenuItem(
+                value: PageStyle.book,
+                child: Text('Kitap / konu formatı'),
+              ),
+            ],
+            onChanged: (value) =>
+                setState(() => pageStyle = value ?? PageStyle.exam),
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<int>(
+            initialValue: columns,
+            decoration: const InputDecoration(labelText: 'Sütun sayısı'),
+            items: const [
+              DropdownMenuItem(value: 1, child: Text('1 sütun')),
+              DropdownMenuItem(value: 2, child: Text('2 sütun')),
+            ],
+            onChanged: (value) => setState(() => columns = value ?? 1),
+          ),
+          if (widget.type == DocumentType.exam)
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Ad Soyad / Sınıf / Tarih alanları'),
+              value: showStudentFields,
+              onChanged: (value) => setState(() => showStudentFields = value),
+            ),
           const SizedBox(height: 28),
           FilledButton.icon(
             onPressed: () => Navigator.push(
@@ -396,6 +442,9 @@ class _DocumentSetupPageState extends State<DocumentSetupPage> {
                       ? (exam ? 'Yeni sınav' : 'Yeni ders föyü')
                       : title.text.trim(),
                   subtitle: subtitle.text.trim(),
+                  pageStyle: pageStyle,
+                  columns: columns,
+                  showStudentFields: showStudentFields,
                 ),
               ),
             ),
@@ -413,11 +462,17 @@ class ContentCapturePage extends StatefulWidget {
     required this.type,
     required this.title,
     required this.subtitle,
+    required this.pageStyle,
+    required this.columns,
+    required this.showStudentFields,
     super.key,
   });
   final DocumentType type;
   final String title;
   final String subtitle;
+  final PageStyle pageStyle;
+  final int columns;
+  final bool showStudentFields;
 
   @override
   State<ContentCapturePage> createState() => _ContentCapturePageState();
@@ -429,6 +484,21 @@ class _ContentCapturePageState extends State<ContentCapturePage> {
   final pages = <XFile>[];
   final texts = <int, String>{};
   final figures = <int, XFile>{};
+  final itemTypes = <int, DocumentType>{};
+  final imagePositions = <int, ImagePosition>{};
+  final answerAreas = <int, bool>{};
+  final pageBreaks = <int, bool>{};
+  DocumentType nextItemType = DocumentType.exam;
+  ImagePosition nextImagePosition = ImagePosition.above;
+  bool nextAnswerArea = false;
+  bool nextPageBreak = false;
+
+  @override
+  void initState() {
+    super.initState();
+    nextItemType = widget.type;
+  }
+
   int? busy;
 
   Future<XFile?> crop(String path, String title) async {
@@ -452,7 +522,16 @@ class _ContentCapturePageState extends State<ContentCapturePage> {
     if (!mounted || image == null) return;
     final result = await crop(image.path, 'Soruyu kırp');
     if (!mounted || result == null) return;
-    setState(() => pages.add(result));
+    setState(() {
+      final index = pages.length;
+      pages.add(result);
+      itemTypes[index] = nextItemType;
+      imagePositions[index] = nextImagePosition;
+      answerAreas[index] = nextAnswerArea;
+      pageBreaks[index] = nextPageBreak;
+      nextAnswerArea = false;
+      nextPageBreak = false;
+    });
   }
 
   Future<void> extractText(int index) async {
@@ -504,6 +583,13 @@ class _ContentCapturePageState extends State<ContentCapturePage> {
           pages: pages,
           texts: texts,
           figures: figures,
+          itemTypes: itemTypes,
+          imagePositions: imagePositions,
+          answerAreas: answerAreas,
+          pageBreaks: pageBreaks,
+          pageStyle: widget.pageStyle,
+          columns: widget.columns,
+          showStudentFields: widget.showStudentFields,
         ),
       ),
     );
@@ -532,6 +618,21 @@ class _ContentCapturePageState extends State<ContentCapturePage> {
           : ListView(
               padding: const EdgeInsets.all(20),
               children: [
+                _ItemLayoutPanel(
+                  itemType: nextItemType,
+                  imagePosition: nextImagePosition,
+                  answerArea: nextAnswerArea,
+                  pageBreak: nextPageBreak,
+                  onTypeChanged: (value) =>
+                      setState(() => nextItemType = value),
+                  onPositionChanged: (value) =>
+                      setState(() => nextImagePosition = value),
+                  onAnswerChanged: (value) =>
+                      setState(() => nextAnswerArea = value),
+                  onPageBreakChanged: (value) =>
+                      setState(() => nextPageBreak = value),
+                ),
+                const SizedBox(height: 16),
                 Text(
                   '${pages.length} soru eklendi',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -605,6 +706,96 @@ class _ContentCapturePageState extends State<ContentCapturePage> {
   }
 }
 
+class _ItemLayoutPanel extends StatelessWidget {
+  const _ItemLayoutPanel({
+    required this.itemType,
+    required this.imagePosition,
+    required this.answerArea,
+    required this.pageBreak,
+    required this.onTypeChanged,
+    required this.onPositionChanged,
+    required this.onAnswerChanged,
+    required this.onPageBreakChanged,
+  });
+
+  final DocumentType itemType;
+  final ImagePosition imagePosition;
+  final bool answerArea;
+  final bool pageBreak;
+  final ValueChanged<DocumentType> onTypeChanged;
+  final ValueChanged<ImagePosition> onPositionChanged;
+  final ValueChanged<bool> onAnswerChanged;
+  final ValueChanged<bool> onPageBreakChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Yeni öğe düzeni',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 10),
+            DropdownButtonFormField<DocumentType>(
+              initialValue: itemType,
+              decoration: const InputDecoration(labelText: 'Tür'),
+              items: const [
+                DropdownMenuItem(value: DocumentType.exam, child: Text('Soru')),
+                DropdownMenuItem(
+                  value: DocumentType.handout,
+                  child: Text('Konu anlatımı'),
+                ),
+              ],
+              onChanged: (value) {
+                if (value != null) onTypeChanged(value);
+              },
+            ),
+            const SizedBox(height: 10),
+            DropdownButtonFormField<ImagePosition>(
+              initialValue: imagePosition,
+              decoration: const InputDecoration(labelText: 'Görsel konumu'),
+              items: const [
+                DropdownMenuItem(
+                  value: ImagePosition.above,
+                  child: Text('Üstte'),
+                ),
+                DropdownMenuItem(
+                  value: ImagePosition.left,
+                  child: Text('Solda'),
+                ),
+                DropdownMenuItem(
+                  value: ImagePosition.right,
+                  child: Text('Sağda'),
+                ),
+              ],
+              onChanged: (value) {
+                if (value != null) onPositionChanged(value);
+              },
+            ),
+            if (itemType == DocumentType.exam)
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Boş cevap alanı ekle'),
+                value: answerArea,
+                onChanged: (value) => onAnswerChanged(value ?? false),
+              ),
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Bu öğeden önce yeni sayfa başlat'),
+              value: pageBreak,
+              onChanged: (value) => onPageBreakChanged(value ?? false),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class DocumentPreviewPage extends StatefulWidget {
   const DocumentPreviewPage({
     required this.type,
@@ -613,6 +804,13 @@ class DocumentPreviewPage extends StatefulWidget {
     required this.pages,
     required this.texts,
     required this.figures,
+    required this.itemTypes,
+    required this.imagePositions,
+    required this.answerAreas,
+    required this.pageBreaks,
+    required this.pageStyle,
+    required this.columns,
+    required this.showStudentFields,
     super.key,
   });
   final DocumentType type;
@@ -621,6 +819,13 @@ class DocumentPreviewPage extends StatefulWidget {
   final List<XFile> pages;
   final Map<int, String> texts;
   final Map<int, XFile> figures;
+  final Map<int, DocumentType> itemTypes;
+  final Map<int, ImagePosition> imagePositions;
+  final Map<int, bool> answerAreas;
+  final Map<int, bool> pageBreaks;
+  final PageStyle pageStyle;
+  final int columns;
+  final bool showStudentFields;
 
   @override
   State<DocumentPreviewPage> createState() => _DocumentPreviewPageState();
@@ -661,62 +866,147 @@ class _DocumentPreviewPageState extends State<DocumentPreviewPage> {
       await rootBundle.load('assets/fonts/ArialBold.ttf'),
     );
     final document = pw.Document();
-    document.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(24),
-        build: (_) => pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+    final groups = <List<int>>[];
+    var current = <int>[];
+    for (var index = 0; index < widget.pages.length; index++) {
+      if (widget.pageBreaks[index] == true && current.isNotEmpty) {
+        groups.add(current);
+        current = <int>[];
+      }
+      current.add(index);
+    }
+    if (current.isNotEmpty) groups.add(current);
+
+    pw.Widget item(int index) {
+      final figure = widget.figures[index];
+      final image = figure == null
+          ? null
+          : pw.MemoryImage(File(figure.path).readAsBytesSync());
+      final text = pw.Text(
+        formatMathForOutput(widget.texts[index] ?? ''),
+        style: pw.TextStyle(font: regular, fontSize: 11),
+      );
+      final imageWidget = image == null
+          ? null
+          : pw.Image(image, width: 150, height: 105, fit: pw.BoxFit.contain);
+      pw.Widget body;
+      switch (widget.imagePositions[index] ?? ImagePosition.above) {
+        case ImagePosition.left:
+          body = imageWidget == null
+              ? text
+              : pw.Row(
+                  children: [
+                    imageWidget,
+                    pw.SizedBox(width: 8),
+                    pw.Expanded(child: text),
+                  ],
+                );
+        case ImagePosition.right:
+          body = imageWidget == null
+              ? text
+              : pw.Row(
+                  children: [
+                    pw.Expanded(child: text),
+                    pw.SizedBox(width: 8),
+                    imageWidget,
+                  ],
+                );
+        case ImagePosition.above:
+          body = pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [if (imageWidget != null) imageWidget, text],
+          );
+      }
+      return pw.Container(
+        margin: const pw.EdgeInsets.only(bottom: 14),
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
             pw.Text(
-              widget.title,
-              style: pw.TextStyle(font: bold, fontSize: 20),
+              widget.itemTypes[index] == DocumentType.handout
+                  ? 'Konu ${index + 1}'
+                  : 'Soru ${index + 1}',
+              style: pw.TextStyle(font: bold, fontSize: 12),
             ),
-            if (widget.subtitle.isNotEmpty)
-              pw.Text(widget.subtitle, style: pw.TextStyle(font: regular)),
-            pw.SizedBox(height: 16),
-            ...widget.pages.asMap().entries.map((entry) {
-              final figure = widget.figures[entry.key];
-              final image = figure == null
-                  ? null
-                  : pw.MemoryImage(File(figure.path).readAsBytesSync());
-              return pw.Container(
-                margin: const pw.EdgeInsets.only(bottom: 14),
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-                  children: [
-                    pw.Text(
-                      'Soru ${entry.key + 1}',
-                      style: pw.TextStyle(font: bold, fontSize: 12),
-                    ),
-                    if (widget.texts[entry.key]?.isNotEmpty == true)
-                      pw.Text(
-                        formatMathForOutput(widget.texts[entry.key]!),
-                        style: pw.TextStyle(font: regular, fontSize: 11),
-                      ),
-                    if (image != null)
-                      pw.SizedBox(
-                        height: 130,
-                        child: pw.Transform.translate(
-                          offset: PdfPoint(0, -positionFor(entry.key) * 130),
-                          child: pw.Center(
-                            child: pw.Image(
-                              image,
-                              width: 170,
-                              height: 120,
-                              fit: pw.BoxFit.contain,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
+            body,
+            if (widget.answerAreas[index] == true) ...[
+              pw.SizedBox(height: 8),
+              pw.Container(
+                height: 18,
+                decoration: const pw.BoxDecoration(
+                  border: pw.Border(bottom: pw.BorderSide()),
                 ),
-              );
-            }),
+              ),
+              pw.Container(
+                height: 18,
+                decoration: const pw.BoxDecoration(
+                  border: pw.Border(bottom: pw.BorderSide()),
+                ),
+              ),
+            ],
           ],
         ),
-      ),
-    );
+      );
+    }
+
+    for (var groupIndex = 0; groupIndex < groups.length; groupIndex++) {
+      final group = groups[groupIndex];
+      final blocks = group.map(item).toList();
+      final content = widget.columns == 2
+          ? pw.Row(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Expanded(
+                  child: pw.Column(
+                    children: [
+                      for (var i = 0; i < blocks.length; i += 2) blocks[i],
+                    ],
+                  ),
+                ),
+                pw.SizedBox(width: 18),
+                pw.Expanded(
+                  child: pw.Column(
+                    children: [
+                      for (var i = 1; i < blocks.length; i += 2) blocks[i],
+                    ],
+                  ),
+                ),
+              ],
+            )
+          : pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+              children: blocks,
+            );
+      document.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(24),
+          build: (_) => pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: [
+              if (groupIndex == 0) ...[
+                pw.Text(
+                  widget.title,
+                  style: pw.TextStyle(font: bold, fontSize: 20),
+                ),
+                if (widget.subtitle.isNotEmpty)
+                  pw.Text(widget.subtitle, style: pw.TextStyle(font: regular)),
+                if (widget.pageStyle == PageStyle.exam &&
+                    widget.showStudentFields)
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.symmetric(vertical: 10),
+                    child: pw.Text(
+                      'Ad Soyad: ____________________   Sınıf: ______   Tarih: ______',
+                      style: pw.TextStyle(font: regular, fontSize: 10),
+                    ),
+                  ),
+              ],
+              content,
+            ],
+          ),
+        ),
+      );
+    }
     await Printing.layoutPdf(onLayout: (_) => document.save());
   }
 
