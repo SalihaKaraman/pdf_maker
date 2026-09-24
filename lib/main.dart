@@ -60,6 +60,12 @@ String formatMathForOutput(String value) {
   return result.replaceAll('sqrt(', '√(');
 }
 
+enum DocumentType { exam, handout }
+
+enum PageStyle { exam, book }
+
+enum ImagePosition { above, left, right }
+
 void main() => runApp(const PdfMakerApp());
 
 class PdfMakerApp extends StatefulWidget {
@@ -98,66 +104,69 @@ class _PdfMakerAppState extends State<PdfMakerApp> {
     const muted = Color(0xFF68655F);
     const accent = Color(0xFFB5472B);
     final lightTheme = ThemeData(
-          brightness: Brightness.light,
-          colorScheme: ColorScheme.fromSeed(seedColor: accent),
-          scaffoldBackgroundColor: paper,
-          appBarTheme: const AppBarTheme(
-            backgroundColor: paper,
-            foregroundColor: ink,
-            elevation: 0,
-          ),
-          textTheme: ThemeData.light().textTheme.apply(
-            bodyColor: ink,
-            displayColor: ink,
-            fontFamily: 'Georgia',
-          ),
-          cardTheme: CardThemeData(
-            color: Colors.white,
-            elevation: 0,
-            margin: EdgeInsets.zero,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-              side: const BorderSide(color: Color(0xFFDDD8CF)),
-            ),
-          ),
-          inputDecorationTheme: _inputTheme(muted, accent),
-          filledButtonTheme: _filledButtonTheme(accent),
-          outlinedButtonTheme: _outlinedButtonTheme(ink),
-        );
-        final darkTheme = ThemeData(
-          brightness: Brightness.dark,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFFE07A54),
-            brightness: Brightness.dark,
-          ),
-          scaffoldBackgroundColor: const Color(0xFF171614),
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Color(0xFF171614),
-            foregroundColor: Color(0xFFEFECE6),
-            elevation: 0,
-          ),
-          textTheme: ThemeData.dark().textTheme.apply(
-            bodyColor: const Color(0xFFEFECE6),
-            displayColor: const Color(0xFFEFECE6),
-            fontFamily: 'Georgia',
-          ),
-          cardTheme: CardThemeData(
-            color: const Color(0xFF211F1C),
-            elevation: 0,
-            margin: EdgeInsets.zero,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-              side: const BorderSide(color: Color(0xFF3A3733)),
-            ),
-          ),
-          inputDecorationTheme: _inputTheme(
-            const Color(0xFFA9A49A),
-            const Color(0xFFE07A54),
-            dark: true,
-          ),
-          filledButtonTheme: _filledButtonTheme(const Color(0xFFE07A54)),
-          outlinedButtonTheme: _outlinedButtonTheme(const Color(0xFFEFECE6), dark: true),
-        );
+      brightness: Brightness.light,
+      colorScheme: ColorScheme.fromSeed(seedColor: accent),
+      scaffoldBackgroundColor: paper,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: paper,
+        foregroundColor: ink,
+        elevation: 0,
+      ),
+      textTheme: ThemeData.light().textTheme.apply(
+        bodyColor: ink,
+        displayColor: ink,
+        fontFamily: 'Georgia',
+      ),
+      cardTheme: CardThemeData(
+        color: Colors.white,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: const BorderSide(color: Color(0xFFDDD8CF)),
+        ),
+      ),
+      inputDecorationTheme: _inputTheme(muted, accent),
+      filledButtonTheme: _filledButtonTheme(accent),
+      outlinedButtonTheme: _outlinedButtonTheme(ink),
+    );
+    final darkTheme = ThemeData(
+      brightness: Brightness.dark,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: const Color(0xFFE07A54),
+        brightness: Brightness.dark,
+      ),
+      scaffoldBackgroundColor: const Color(0xFF171614),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Color(0xFF171614),
+        foregroundColor: Color(0xFFEFECE6),
+        elevation: 0,
+      ),
+      textTheme: ThemeData.dark().textTheme.apply(
+        bodyColor: const Color(0xFFEFECE6),
+        displayColor: const Color(0xFFEFECE6),
+        fontFamily: 'Georgia',
+      ),
+      cardTheme: CardThemeData(
+        color: const Color(0xFF211F1C),
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: const BorderSide(color: Color(0xFF3A3733)),
+        ),
+      ),
+      inputDecorationTheme: _inputTheme(
+        const Color(0xFFA9A49A),
+        const Color(0xFFE07A54),
+        dark: true,
+      ),
+      filledButtonTheme: _filledButtonTheme(const Color(0xFFE07A54)),
+      outlinedButtonTheme: _outlinedButtonTheme(
+        const Color(0xFFEFECE6),
+        dark: true,
+      ),
+    );
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Maker',
@@ -168,30 +177,62 @@ class _PdfMakerAppState extends State<PdfMakerApp> {
     );
   }
 
-      InputDecorationTheme _inputTheme(Color muted, Color accent, {bool dark = false}) {
-        final fill = dark ? const Color(0xFF26241F) : const Color(0xFFF8F6F1);
-        final border = dark ? const Color(0xFF3A3733) : const Color(0xFFDDD8CF);
-        return InputDecorationTheme(
-          filled: true,
-          fillColor: fill,
-          labelStyle: TextStyle(color: muted, fontFamily: 'sans-serif'),
-          hintStyle: TextStyle(color: muted, fontFamily: 'sans-serif'),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: border)),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: border)),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: accent, width: 1.5)),
-        );
-      }
+  InputDecorationTheme _inputTheme(
+    Color muted,
+    Color accent, {
+    bool dark = false,
+  }) {
+    final fill = dark ? const Color(0xFF26241F) : const Color(0xFFF8F6F1);
+    final border = dark ? const Color(0xFF3A3733) : const Color(0xFFDDD8CF);
+    return InputDecorationTheme(
+      filled: true,
+      fillColor: fill,
+      labelStyle: TextStyle(color: muted, fontFamily: 'sans-serif'),
+      hintStyle: TextStyle(color: muted, fontFamily: 'sans-serif'),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+        borderSide: BorderSide(color: border),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+        borderSide: BorderSide(color: border),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+        borderSide: BorderSide(color: accent, width: 1.5),
+      ),
+    );
+  }
 
-      FilledButtonThemeData _filledButtonTheme(Color accent) => FilledButtonThemeData(
-        style: FilledButton.styleFrom(backgroundColor: accent, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
+  FilledButtonThemeData _filledButtonTheme(Color accent) =>
+      FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: accent,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        ),
       );
 
-      OutlinedButtonThemeData _outlinedButtonTheme(Color ink, {bool dark = false}) => OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(foregroundColor: ink, side: BorderSide(color: dark ? const Color(0xFF3A3733) : const Color(0xFFDDD8CF)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
-      );
+  OutlinedButtonThemeData _outlinedButtonTheme(
+    Color ink, {
+    bool dark = false,
+  }) => OutlinedButtonThemeData(
+    style: OutlinedButton.styleFrom(
+      foregroundColor: ink,
+      side: BorderSide(
+        color: dark ? const Color(0xFF3A3733) : const Color(0xFFDDD8CF),
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+    ),
+  );
+}
 
 class HomePage extends StatefulWidget {
-  const HomePage({required this.isDarkMode, required this.onToggleTheme, super.key});
+  const HomePage({
+    required this.isDarkMode,
+    required this.onToggleTheme,
+    super.key,
+  });
 
   final bool isDarkMode;
   final VoidCallback onToggleTheme;
